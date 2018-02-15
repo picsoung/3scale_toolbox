@@ -1,0 +1,109 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'commander/import'
+require 'yaml'
+require 'rainbow'
+
+# load in lib folder
+lib = File.expand_path('../../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+
+require '3scale_toolbox/credentials'
+
+CONF_PATH = "~/.3scale/credentials.yml"
+
+program :name, '3scale'
+program :version, '0.0.1'
+program :description, 'ahahaha'
+
+command :config do |c|
+  c.syntax = 'cli config, [options]'
+  c.summary = ''
+  c.description = ''
+  c.example 'description', 'command example'
+  c.option '--some-switch', 'Some switch that does something'
+
+  c.action do |args, options|
+    # Create Credential file if does not exist
+    if File.exists?(File.expand_path("#{CONF_PATH}"))
+      conf = YAML.load_file(File.expand_path("#{CONF_PATH}"))
+    else
+      f = File.new(File.expand_path("#{CONF_PATH}"), "w")
+      # default conf
+      conf = {
+        threescale: {
+          id: "awesome-api",
+          token: "1234567890abc",
+          domain: "3scale.net"
+        }
+      }
+      f.write(conf.to_yaml)
+    end
+
+    # prompt user for access_token, 3scale id, and wildcard domain
+    say(Rainbow("Please answer the following questions to configure 3scale cli.").cyan)
+
+    txt = Rainbow("? ").green + Rainbow("3scale access token:").bright + Rainbow(" (#{conf[:threescale][:token]}) ").dimgray
+    threescale_access_token = ask(txt)
+
+    txt = Rainbow("? ").green + Rainbow("3scale id:").bright+ Rainbow(" (#{conf[:threescale][:id]}) ").dimgray
+    threescale_id = ask(txt)
+
+    txt = Rainbow("? ").green + Rainbow("3scale wildcard domain:").bright+ Rainbow(" (#{conf[:threescale][:domain]}) ").dimgray
+    threescale_wildcard_domain = ask(txt)
+
+    creds = {
+      threescale: {
+        id: threescale_id.empty? ? conf[:threescale][:id] : threescale_id,
+        token: threescale_access_token.empty? ? conf[:threescale][:token] : threescale_access_token,
+        domain: threescale_wildcard_domain.empty? ? conf[:threescale][:domain] : threescale_wildcard_domain
+      }
+    }
+
+    File.open(File.expand_path("#{CONF_PATH}"), "w") do |file|
+        file.write(creds.to_yaml)
+    end
+
+    # check if credentials are valid
+    if ThreeScaleToolbox::Credentials.test?
+      say(Rainbow("3scale cli configured successfully.").green)
+    else
+      say(Rainbow("ERROR encountered: Your credentials are invalid. Check them and try again.").red)
+    end
+  end
+end
+
+command :update do |c|
+  c.syntax = 'cli update, [options]'
+  c.summary = ''
+  c.description = ''
+  c.example 'description', 'command example'
+  c.option '--some-switch', 'Some switch that does something'
+  c.action do |args, options|
+    # Do something or c.when_called Cli::Commands::Update,
+  end
+end
+
+command :import do |c|
+  c.syntax = 'cli import, [options]'
+  c.summary = ''
+  c.description = ''
+  c.example 'description', 'command example'
+  c.option '--some-switch', 'Some switch that does something'
+  c.action do |args, options|
+    # Do something or c.when_called Cli::Commands::Import,
+  end
+end
+
+command :copy do |c|
+  c.syntax = 'cli copy [options]'
+  c.summary = ''
+  c.description = ''
+  c.example 'description', 'command example'
+  c.option '--some-switch', 'Some switch that does something'
+  c.action do |args, options|
+    # Do something or c.when_called Cli::Commands::Copy
+    puts "copy"
+  end
+end
